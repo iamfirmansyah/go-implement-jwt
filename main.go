@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-jwt/app"
 	"go-jwt/config"
+	"go-jwt/models/domain"
 	"go-jwt/routes"
 	"log"
 	"net/http"
@@ -19,6 +20,9 @@ func main() {
 
 	// * Initialize Database
 	app.ConnectMysql(config.AppConfig.MYSQL_CONNECTION)
+
+	// * Migration Database
+	app.Instance.AutoMigrate(domain.User{})
 
 	// * Initialize the router
 	CreateRouter()
