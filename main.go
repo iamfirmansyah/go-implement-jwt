@@ -11,6 +11,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var router *mux.Router
+
 func main() {
 	// * Load Configuration
 	config.LoadAppConfig()
@@ -19,13 +21,21 @@ func main() {
 	app.ConnectMysql(config.AppConfig.MYSQL_CONNECTION)
 
 	// * Initialize the router
-	router := mux.NewRouter().StrictSlash(true)
-	s := router.PathPrefix("/api").Subrouter()
+	CreateRouter()
 
-	// * Register Routes Public
-	routes.User(s.PathPrefix("/user").Subrouter())
+	// * Register Routes
+	InitializeRoute()
 
 	// * Start the server
 	log.Println(fmt.Sprintf("Starting Server on port %s", config.AppConfig.PORT))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", config.AppConfig.PORT), router))
+}
+
+func CreateRouter() {
+	router = mux.NewRouter()
+}
+
+func InitializeRoute() {
+	s := router.PathPrefix("/api").Subrouter()
+	routes.User(s.PathPrefix("/user").Subrouter())
 }
