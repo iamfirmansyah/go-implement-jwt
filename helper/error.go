@@ -4,7 +4,7 @@ import "fmt"
 
 func PanicIfError(err error) {
 	if err != nil {
-		fmt.Errorf("Something Went Wrong: %s", err.Error())
+		fmt.Println(err)
 		panic(err)
 	}
 }
