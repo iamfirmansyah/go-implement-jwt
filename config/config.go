@@ -10,6 +10,7 @@ import (
 type Config struct {
 	PORT             string `mapstructure:"PORT"`
 	MYSQL_CONNECTION string `mapstructure:"MYSQL_CONNECTION"`
+	JWT_KEY          string `mapstructure:"JWT_KEY"`
 }
 
 var AppConfig *Config

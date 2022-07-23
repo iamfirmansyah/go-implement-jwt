@@ -5,28 +5,17 @@ import (
 	"go-jwt/helper"
 	"go-jwt/models/domain"
 	"go-jwt/models/web"
+	"go-jwt/services"
 	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
 )
-
-func GetUser(w http.ResponseWriter, r *http.Request) {
-	var data []domain.User
-	app.Instance.Model(&domain.User{}).Scan(&data)
-
-	response := web.WebResponse{
-		Data: data,
-	}
-
-	helper.Response(w, response, 200)
-}
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 
-	var user web.User
+	var user web.UserRequest
 
 	helper.ReadFromRequestBody(r, &user)
 
@@ -48,13 +37,13 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	//checks if email is already register or not
 	if dbuser.Email != "" {
 		response := web.WebResponse{
-			Data: "User Not Found",
+			Data: "Email already in use",
 		}
 		helper.Response(w, response, 400)
 		return
 	}
 
-	user.Password, err = GeneratehashPassword(user.Password)
+	user.Password, err = services.GeneratehashPassword(user.Password)
 	if err != nil {
 		log.Fatalln("error in password hash")
 	}
@@ -67,7 +56,64 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	helper.Response(w, response, 200)
 }
 
-func GeneratehashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+func SignIn(w http.ResponseWriter, r *http.Request) {
+	validate := validator.New()
+
+	var authRequest web.LoginRequest
+
+	helper.ReadFromRequestBody(r, &authRequest)
+
+	err := validate.Struct(authRequest)
+
+	errors := helper.FormatValidationError(err)
+
+	if errors != nil {
+		response := web.WebResponse{
+			Data: errors,
+		}
+		helper.Response(w, response, 400)
+		return
+	}
+
+	var authUser domain.User
+
+	app.Instance.Where("email = ?", authRequest.Email).First(&authUser)
+
+	if authUser.Email == "" {
+		response := web.WebResponse{
+			Data: "Username or Password is incorrect",
+		}
+		helper.Response(w, response, 400)
+		return
+	}
+
+	check := services.CheckPasswordHash(authRequest.Password, authUser.Password)
+
+	if !check {
+		response := web.WebResponse{
+			Data: "Username or Password is incorrect",
+		}
+		helper.Response(w, response, 400)
+		return
+	}
+
+	validToken, err := services.GenerateJwt(authUser.Email, authUser.Role)
+
+	if err != nil {
+		response := web.WebResponse{
+			Data: "Failed to generate token",
+		}
+		helper.Response(w, response, 400)
+		return
+	}
+
+	var token domain.Token
+	token.Email = authUser.Email
+	token.Role = authUser.Role
+	token.TokenString = validToken
+
+	response := web.WebResponse{
+		Data: token,
+	}
+	helper.Response(w, response, 200)
 }

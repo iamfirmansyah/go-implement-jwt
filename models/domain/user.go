@@ -1,13 +1,14 @@
 package domain
 
-import "gorm.io/gorm"
-
 type User struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Email    string `gorm:"unique" json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	ID        int
+	Name      string `json:"name"`
+	Email     string `gorm:"unique" json:"email"`
+	Password  string `json:"password"`
+	Role      string `json:"role"`
+	CreatedAt int
+	DeletedAt int
+	UpdatedAt int
 }
 
 type Authentication struct {
